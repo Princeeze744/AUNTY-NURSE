@@ -1,0 +1,331 @@
+// Aunty Nurse — database design (Phase 1)
+// Rules: additive migrations only. Local work uses the Neon `dev` branch, never `production`.
+// Message bodies and health notes are encrypted in the app layer before they are stored.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────── Enums ─────────────
+
+enum Role {
+  MOTHER
+  PROVIDER
+  ADMIN
+}
+
+enum ProviderKind {
+  NURSE_MIDWIFE
+  NURSE
+  DOCTOR
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum CredentialType {
+  NMCN_NURSE_REGISTRATION
+  NMCN_MIDWIFE_REGISTRATION
+  NMCN_PRACTISING_LICENCE
+  MDCN_REGISTRATION
+  MDCN_PRACTISING_LICENCE
+  INDEMNITY_INSURANCE
+  OTHER
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  HEALTH_DATA_PROCESSING
+  REMINDERS_AND_MESSAGES
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+}
+
+enum MessageKind {
+  TEXT
+  VOICE
+  IMAGE
+  SYSTEM
+}
+
+enum ReminderKind {
+  ANTENATAL_VISIT
+  IMMUNISATION
+  CHECK_IN
+  CUSTOM
+}
+
+enum ContentKind {
+  GUIDE_WEEK
+  DANGER_SIGN_QUESTION
+  ARTICLE
+}
+
+// A clinical sentence is only shown to mothers when it reaches PUBLISHED.
+enum ContentStatus {
+  DRAFT
+  MIDWIFE_APPROVED
+  DOCTOR_REVIEWED
+  PUBLISHED
+  RETIRED
+}
+
+enum DangerOutcome {
+  NORMAL
+  SEE_WITHIN_24H
+  GO_NOW
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+// ───────────── People ─────────────
+
+model User {
+  id        String   @id @default(cuid())
+  role      Role     @default(MOTHER)
+  phone     String   @unique
+  email     String?  @unique
+  fullName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  motherProfile MotherProfile?
+  provider      Provider?
+  consents      Consent[]
+  conversations Conversation[]
+  messages      Message[]
+  reminders     Reminder[]
+  dangerChecks  DangerCheck[]
+  payments      Payment[]
+  auditActions  AuditLog[]     @relation("AuditActor")
+  auditSubject  AuditLog[]     @relation("AuditSubject")
+}
+
+model MotherProfile {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id])
+  expectedDeliveryDate  DateTime?
+  babyBornAt            DateTime?
+  state                 String?
+  lga                   String?
+  preferredLanguage     String    @default("en")
+  chosenFacilityName    String?
+  chosenFacilityPhone   String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+// One row per consent given. Withdrawal sets withdrawnAt; rows are never deleted.
+model Consent {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  type        ConsentType
+  version     String
+  grantedAt   DateTime    @default(now())
+  withdrawnAt DateTime?
+
+  @@index([userId, type])
+}
+
+// ───────────── Providers ─────────────
+
+model Provider {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id])
+  kind               ProviderKind
+  bio                String?
+  photoUrl           String?
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedAt         DateTime?
+  verifiedByUserId   String?
+  acceptingMothers   Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  credentials   Credential[]
+  availability  AvailabilityWindow[]
+  conversations Conversation[]
+}
+
+model Credential {
+  id               String             @id @default(cuid())
+  providerId       String
+  provider         Provider           @relation(fields: [providerId], references: [id])
+  type             CredentialType
+  licenceNumber    String?
+  issuingBody      String
+  issuedAt         DateTime?
+  expiresAt        DateTime?
+  documentUrl      String
+  status           VerificationStatus @default(PENDING)
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  reviewNote       String?
+  createdAt        DateTime           @default(now())
+
+  @@index([providerId])
+  @@index([expiresAt])
+}
+
+// Real service hours. Outside these, the app says so honestly.
+model AvailabilityWindow {
+  id          String   @id @default(cuid())
+  providerId  String
+  provider    Provider @relation(fields: [providerId], references: [id])
+  dayOfWeek   Int // 0 = Sunday … 6 = Saturday
+  startMinute Int // minutes after midnight, Africa/Lagos
+  endMinute   Int
+
+  @@index([providerId, dayOfWeek])
+}
+
+// ───────────── Chat ─────────────
+
+model Conversation {
+  id            String             @id @default(cuid())
+  motherId      String
+  mother        User               @relation(fields: [motherId], references: [id])
+  providerId    String
+  provider      Provider           @relation(fields: [providerId], references: [id])
+  status        ConversationStatus @default(OPEN)
+  lastMessageAt DateTime?
+  createdAt     DateTime           @default(now())
+
+  messages Message[]
+
+  @@index([providerId, lastMessageAt])
+  @@index([motherId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  kind           MessageKind  @default(TEXT)
+  bodyEncrypted  String?
+  mediaUrl       String?
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+
+  @@index([conversationId, createdAt])
+}
+
+// ───────────── Care tools ─────────────
+
+model Reminder {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  kind        ReminderKind
+  title       String
+  dueAt       DateTime
+  sentAt      DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@index([dueAt, sentAt])
+  @@index([userId])
+}
+
+// Every clinical sentence, with its source and who signed it off.
+model ClinicalContent {
+  id                 String        @id @default(cuid())
+  slug               String
+  version            Int           @default(1)
+  kind               ContentKind
+  language           String        @default("en")
+  pregnancyWeek      Int?
+  title              String
+  body               String
+  sourceCitation     String
+  status             ContentStatus @default(DRAFT)
+  draftedByUserId    String?
+  midwifeApprovedBy  String?
+  midwifeApprovedAt  DateTime?
+  doctorReviewedBy   String?
+  doctorReviewedAt   DateTime?
+  publishedAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@unique([slug, language, version])
+  @@index([kind, status])
+}
+
+// A record of each danger-signs check: what was asked, what was answered, what we said.
+model DangerCheck {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  answers        Json
+  outcome        DangerOutcome
+  contentVersion String
+  createdAt      DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@index([outcome, createdAt])
+}
+
+// ───────────── Money ─────────────
+
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  amountKobo  Int
+  currency    String        @default("NGN")
+  purpose     String
+  gateway     String        @default("paystack")
+  gatewayRef  String        @unique
+  status      PaymentStatus @default(PENDING)
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@index([userId])
+}
+
+// ───────────── Audit ─────────────
+
+// Who viewed or changed what, and whose record it was. Rows are never edited or deleted.
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorId       String?
+  actor         User?    @relation("AuditActor", fields: [actorId], references: [id])
+  subjectUserId String?
+  subject       User?    @relation("AuditSubject", fields: [subjectUserId], references: [id])
+  action        String
+  entity        String
+  entityId      String?
+  metadata      Json?
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+
+  @@index([subjectUserId, createdAt])
+  @@index([actorId, createdAt])
+}
