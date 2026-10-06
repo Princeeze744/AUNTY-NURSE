@@ -1,68 +1,178 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+
+type Lang = "en" | "pcm";
+
+const COPY: Record<
+  Lang,
+  { message: string; tonight: string; demo: string; send: string }
+> = {
+  en: {
+    message: "Aunty, the baby has not moved since evening.",
+    tonight: "Tonight",
+    demo: "Demonstration. Not a real conversation.",
+    send: "Send",
+  },
+  pcm: {
+    message: "Aunty, the pikin never move since evening.",
+    tonight: "This night",
+    demo: "Na demonstration. No be real chat.",
+    send: "Send am",
+  },
+};
+
+/** Types the text out one character at a time, the way a worried thumb does. */
+function useTyped(text: string) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setCount(text.length);
+      return;
+    }
+
+    setCount(0);
+    let i = 0;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const tick = () => {
+      i += 1;
+      setCount(i);
+      if (i < text.length) {
+        const justTyped = text[i - 1];
+        const pause = justTyped === "," ? 420 : 55 + Math.random() * 65;
+        timer = setTimeout(tick, pause);
+      }
+    };
+
+    timer = setTimeout(tick, 1100);
+    return () => clearTimeout(timer);
+  }, [text]);
+
+  return count;
+}
 
 export default function Home() {
+  const [lang, setLang] = useState<Lang>("en");
+  const copy = COPY[lang];
+  const count = useTyped(copy.message);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="flex flex-1 flex-col bg-night text-text-night">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 pt-5 sm:px-8 sm:pt-7">
+        <span className="font-display text-xl font-semibold tracking-tight">
+          Aunty Nurse
+        </span>
+        <span className="rounded-full border border-night-line px-3 py-1.5 text-xs font-medium text-mist">
+          Demonstration
+        </span>
+      </header>
+
+      <main className="mx-auto w-full max-w-6xl flex-1 px-5 sm:px-8">
+        <section className="grid min-h-[calc(100svh-5rem)] items-center gap-10 py-10 lg:grid-cols-[1fr_auto] lg:gap-20 lg:py-6">
+          <div>
+            <p className="text-sm font-medium text-mist">
+              Somewhere in Nigeria, tonight
+            </p>
+
+            <h1 className="clock mt-3">
+              2:14<small>am</small>
+            </h1>
+
+            <p className="mt-6 max-w-md font-display text-2xl font-medium leading-snug sm:text-3xl">
+              Everyone in the house is asleep. She is not.
+            </p>
+
+            <p className="mt-4 max-w-md text-lg leading-8 text-mist">
+              She is 31 weeks pregnant, and she is afraid to wait for morning.
+            </p>
+
+            <div className="mt-10 hidden items-center gap-4 text-sm text-mist lg:flex">
+              <span className="scroll-cue-line" aria-hidden="true" />
+              Scroll to stay with her
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-6">
+            <div
+              className="phone"
+              role="img"
+              aria-label={`A phone showing a chat with Aunty Nurse at 2:14am. A message is being typed: ${copy.message}`}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+              <div className="phone-screen" aria-hidden="true">
+                <div className="phone-status">
+                  <span>2:14</span>
+                  <span className="battery" />
+                </div>
+
+                <div className="chat-head">
+                  <span className="chat-avatar">AN</span>
+                  <span>
+                    <span className="block text-[15px] font-semibold leading-tight">
+                      Aunty Nurse
+                    </span>
+                    <span className="block text-xs text-green-soft">
+                      Licensed nurse-midwife
+                    </span>
+                  </span>
+                </div>
+
+                <div className="chat-thread">
+                  <span className="chat-chip">{copy.tonight}</span>
+                  <span className="mt-auto text-center text-[11px] leading-4 text-green-soft">
+                    {copy.demo}
+                  </span>
+                </div>
+
+                <div className="composer">
+                  <div className="composer-field">
+                    {copy.message.slice(0, count)}
+                    <span className="caret" />
+                  </div>
+                  <span className="composer-send" title={copy.send}>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 19V5" />
+                      <path d="M5 12l7-7 7 7" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lang-switch" role="group" aria-label="Chat language">
+              <button
+                type="button"
+                aria-pressed={lang === "en"}
+                onClick={() => setLang("en")}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                aria-pressed={lang === "pcm"}
+                onClick={() => setLang("pcm")}
+              >
+                Pidgin
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4 text-sm text-mist lg:hidden">
+              <span className="scroll-cue-line" aria-hidden="true" />
+              Scroll to stay with her
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );

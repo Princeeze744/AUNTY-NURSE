@@ -1,26 +1,267 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────
+   Aunty Nurse — "2:14am" design system
+   Night-green to ivory dawn. Marigold is an accent only.
+   Red (--urgent) is reserved for the "go to hospital NOW" result.
+   No gradients anywhere.
+   ───────────────────────────────────────────── */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --night: #0b1712;
+  --night-deep: #07100c;
+  --night-line: rgba(233, 240, 234, 0.14);
+  --text-night: #e9f0ea;
+  --mist: #93a89c;
+  --ivory: #f6f1e6;
+  --ivory-dim: #e9e2d2;
+  --green: #1d4d38;
+  --green-ink: #0f2a1f;
+  --green-soft: #5c7568;
+  --marigold: #e8a21a;
+  --urgent: #d92d20;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-night: var(--night);
+  --color-night-deep: var(--night-deep);
+  --color-night-line: var(--night-line);
+  --color-text-night: var(--text-night);
+  --color-mist: var(--mist);
+  --color-ivory: var(--ivory);
+  --color-ivory-dim: var(--ivory-dim);
+  --color-green: var(--green);
+  --color-green-ink: var(--green-ink);
+  --color-green-soft: var(--green-soft);
+  --color-marigold: var(--marigold);
+  --color-urgent: var(--urgent);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-bricolage);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--night-deep);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--night);
+  color: var(--text-night);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--marigold);
+  outline-offset: 3px;
+}
+
+/* ── The time ── */
+
+.clock {
+  font-family: var(--font-bricolage), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(4.25rem, 21vw, 9.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-night);
+}
+
+.clock small {
+  font-size: 0.42em;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--mist);
+  margin-left: 0.08em;
+}
+
+/* ── The phone ── */
+
+.phone {
+  width: min(100%, 300px);
+  aspect-ratio: 9 / 17;
+  padding: 10px;
+  border-radius: 42px;
+  background: #040806;
+  border: 1px solid var(--night-line);
+  /* the lit screen spilling a little light into a dark room */
+  box-shadow:
+    0 0 0 1px #000,
+    0 0 70px rgba(246, 241, 230, 0.09);
+}
+
+.phone-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 32px;
+  background: var(--ivory);
+  color: var(--green-ink);
+}
+
+.phone-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 22px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.battery {
+  position: relative;
+  width: 22px;
+  height: 11px;
+  border: 1.5px solid var(--green-ink);
+  border-radius: 3px;
+}
+
+.battery::before {
+  content: "";
+  position: absolute;
+  inset: 1.5px;
+  right: 9px;
+  background: var(--green-ink);
+  border-radius: 1px;
+}
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid var(--ivory-dim);
+}
+
+.chat-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--ivory);
+  font-family: var(--font-bricolage), system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chat-thread {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+}
+
+.chat-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ivory-dim);
+  color: var(--green-soft);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px 14px;
+  border-top: 1px solid var(--ivory-dim);
+}
+
+.composer-field {
+  flex: 1;
+  min-height: 44px;
+  padding: 11px 14px;
+  border-radius: 20px;
+  background: #fffdf7;
+  border: 1px solid var(--ivory-dim);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--green-ink);
+}
+
+.composer-send {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--marigold);
+  color: var(--green-ink);
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 1px;
+  vertical-align: -0.15em;
+  background: var(--green);
+  animation: blink 1.05s steps(1) infinite;
+}
+
+/* ── Language switch ── */
+
+.lang-switch {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--night-line);
+}
+
+.lang-switch button {
+  min-height: 44px;
+  min-width: 92px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--mist);
+}
+
+.lang-switch button[aria-pressed="true"] {
+  background: var(--text-night);
+  color: var(--night);
+}
+
+/* ── Scroll cue ── */
+
+.scroll-cue-line {
+  width: 1px;
+  height: 36px;
+  background: var(--mist);
+  transform-origin: top;
+  animation: drop 2.4s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes drop {
+  0% {
+    transform: scaleY(0);
+  }
+  60%,
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret,
+  .scroll-cue-line {
+    animation: none;
+  }
 }
