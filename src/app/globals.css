@@ -2,19 +2,37 @@
 
 /* ─────────────────────────────────────────────
    Aunty Nurse — "2:14am" design system
-   Night-green to ivory dawn. Marigold is an accent only.
+   The page moves from night-green to ivory morning as you scroll.
+   Marigold is an accent only (send button).
    Red (--urgent) is reserved for the "go to hospital NOW" result.
    No gradients anywhere.
    ───────────────────────────────────────────── */
 
+/* Registered so the text colour can fade with the background. */
+@property --fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e9f0ea;
+}
+
+@property --fg-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #a9bbb0;
+}
+
+@property --rule {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(233, 240, 234, 0.16);
+}
+
 :root {
   --night: #0b1712;
   --night-deep: #07100c;
-  --night-line: rgba(233, 240, 234, 0.14);
-  --text-night: #e9f0ea;
-  --mist: #93a89c;
   --ivory: #f6f1e6;
   --ivory-dim: #e9e2d2;
+  --paper: #fffdf7;
   --green: #1d4d38;
   --green-ink: #0f2a1f;
   --green-soft: #5c7568;
@@ -24,17 +42,17 @@
 
 @theme inline {
   --color-night: var(--night);
-  --color-night-deep: var(--night-deep);
-  --color-night-line: var(--night-line);
-  --color-text-night: var(--text-night);
-  --color-mist: var(--mist);
   --color-ivory: var(--ivory);
   --color-ivory-dim: var(--ivory-dim);
+  --color-paper: var(--paper);
   --color-green: var(--green);
   --color-green-ink: var(--green-ink);
   --color-green-soft: var(--green-soft);
   --color-marigold: var(--marigold);
   --color-urgent: var(--urgent);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-rule: var(--rule);
   --font-sans: var(--font-inter);
   --font-display: var(--font-bricolage);
 }
@@ -45,7 +63,6 @@ html {
 
 body {
   background: var(--night);
-  color: var(--text-night);
   font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -54,6 +71,29 @@ body {
 :focus-visible {
   outline: 2px solid var(--marigold);
   outline-offset: 3px;
+}
+
+/* ── The page and its two tones ── */
+
+.page {
+  color: var(--fg);
+  transition:
+    background-color 1.4s ease,
+    --fg 1.4s ease,
+    --fg-muted 1.4s ease,
+    --rule 1.4s ease;
+}
+
+.tone-night {
+  --fg: #e9f0ea;
+  --fg-muted: #a9bbb0;
+  --rule: rgba(233, 240, 234, 0.16);
+}
+
+.tone-day {
+  --fg: #0f2a1f;
+  --fg-muted: #4f6659;
+  --rule: rgba(15, 42, 31, 0.18);
 }
 
 /* ── The time ── */
@@ -65,15 +105,28 @@ body {
   line-height: 0.92;
   letter-spacing: -0.045em;
   font-variant-numeric: tabular-nums;
-  color: var(--text-night);
+  color: var(--fg);
+}
+
+.clock-sm {
+  font-size: clamp(2.75rem, 12vw, 4.75rem);
 }
 
 .clock small {
   font-size: 0.42em;
   font-weight: 500;
   letter-spacing: -0.02em;
-  color: var(--mist);
+  color: var(--fg-muted);
   margin-left: 0.08em;
+}
+
+.stat-number {
+  font-family: var(--font-bricolage), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(4.5rem, 24vw, 15rem);
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── The phone ── */
@@ -84,7 +137,7 @@ body {
   padding: 10px;
   border-radius: 42px;
   background: #040806;
-  border: 1px solid var(--night-line);
+  border: 1px solid rgba(233, 240, 234, 0.16);
   /* the lit screen spilling a little light into a dark room */
   box-shadow:
     0 0 0 1px #000,
@@ -154,18 +207,102 @@ body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
-  padding: 14px 16px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px 14px;
 }
 
 .chat-chip {
+  align-self: center;
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--ivory-dim);
   color: var(--green-soft);
   font-size: 11px;
   font-weight: 500;
+}
+
+.bubble-out,
+.bubble-in {
+  max-width: 88%;
+  padding: 9px 12px;
+  font-size: 14px;
+  line-height: 1.42;
+}
+
+.bubble-out {
+  align-self: flex-end;
+  background: var(--green);
+  color: var(--ivory);
+  border-radius: 18px 18px 4px 18px;
+}
+
+.bubble-in {
+  align-self: flex-start;
+  background: var(--paper);
+  border: 1px solid var(--ivory-dim);
+  color: var(--green-ink);
+  border-radius: 18px 18px 18px 4px;
+}
+
+.appear {
+  animation: appear 0.45s ease both;
+}
+
+.dots {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px 2px;
+}
+
+.dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+.dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.voice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 190px;
+}
+
+.voice-play {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--ivory);
+}
+
+.wave {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+}
+
+.wave i {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--green);
+  animation: wave 1.1s ease-in-out infinite;
 }
 
 .composer {
@@ -181,7 +318,7 @@ body {
   min-height: 44px;
   padding: 11px 14px;
   border-radius: 20px;
-  background: #fffdf7;
+  background: var(--paper);
   border: 1px solid var(--ivory-dim);
   font-size: 15px;
   line-height: 1.4;
@@ -215,7 +352,7 @@ body {
   display: inline-flex;
   padding: 4px;
   border-radius: 999px;
-  border: 1px solid var(--night-line);
+  border: 1px solid var(--rule);
 }
 
 .lang-switch button {
@@ -225,12 +362,93 @@ body {
   border-radius: 999px;
   font-size: 15px;
   font-weight: 500;
-  color: var(--mist);
+  color: var(--fg-muted);
 }
 
 .lang-switch button[aria-pressed="true"] {
-  background: var(--text-night);
-  color: var(--night);
+  background: var(--ivory);
+  color: var(--green-ink);
+}
+
+/* ── Danger-signs demonstration ── */
+
+.sheet {
+  width: 100%;
+  max-width: 34rem;
+  padding: 24px 20px;
+  border-radius: 28px;
+  background: var(--ivory);
+  color: var(--green-ink);
+}
+
+.choice {
+  flex: 1;
+  min-height: 58px;
+  border-radius: 16px;
+  border: 1.5px solid var(--green-ink);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--green-ink);
+  background: var(--paper);
+}
+
+.choice:active {
+  background: var(--ivory-dim);
+}
+
+.result {
+  padding: 20px 18px;
+  border-radius: 20px;
+  border: 1.5px solid var(--green-ink);
+  background: var(--paper);
+}
+
+/* The only red on the page. */
+.result-now {
+  border-color: var(--urgent);
+  background: var(--urgent);
+  color: #fff;
+}
+
+.text-link {
+  min-height: 44px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ── Trust strip ── */
+
+.trust {
+  display: grid;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.trust > * {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.trust > *:last-child {
+  border-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .trust {
+    grid-template-columns: 1fr 1fr 1.4fr;
+  }
+
+  .trust > * {
+    padding: 20px 24px;
+    border-bottom: 0;
+    border-left: 1px solid var(--rule);
+  }
+
+  .trust > *:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
 }
 
 /* ── Scroll cue ── */
@@ -238,14 +456,14 @@ body {
 .scroll-cue-line {
   width: 1px;
   height: 36px;
-  background: var(--mist);
+  background: var(--fg-muted);
   transform-origin: top;
   animation: drop 2.4s ease-in-out infinite;
 }
 
 @keyframes blink {
   50% {
-    opacity: 0;
+    opacity: 0.15;
   }
 }
 
@@ -259,9 +477,37 @@ body {
   }
 }
 
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .page {
+    transition: none;
+  }
+
   .caret,
-  .scroll-cue-line {
+  .scroll-cue-line,
+  .dots i,
+  .wave i,
+  .appear {
     animation: none;
   }
 }
